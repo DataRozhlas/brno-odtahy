@@ -1,0 +1,46 @@
+#map
+  position absolute
+  top 0px
+  left 0px
+  bottom 0px
+  width (1000px - infobarWidth)
+  width calc(100% \- 330px)
+  .leaflet-div-icon
+    border 0px none
+    background rgba(255,255,255,0.5)
+    border-radius 50%
+    border 5px solid rgba(#fd8d3c, 0.4)
+    div
+      border-radius 50%
+      width 100%
+      height 100%
+      text-align center
+      color white
+      font-size 16px
+      opacity 0.9
+    &:hover
+      border-color rgba(#fd8d3c, 0.8)
+      div
+        opacity 1
+
+
+.draggerButton
+  position absolute
+  top 9px
+  left 50px
+  width 29px
+  height 29px
+  border 2px solid #b
+  text-align center
+  border-radius 3px
+  background lighten(ColorHeading, 80%)
+  border-color darken(ColorHeading, 40%)
+  &:hover
+    cursor pointer
+    background lighten(ColorHeading, 70%)
+  &:active
+    background lighten(ColorHeading, 60%)
+  &.active
+    background ColorHeading
+    border-color darken(ColorHeading, 40%)
+    color white
