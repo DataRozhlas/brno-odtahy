@@ -1,3 +1,4 @@
+monthNames= <[Leden Únor Březen Duben Květen Červen Červenec Srpen Září Říjen Listopad Prosinec]>
 window.ig.Infobar = class Infobar
   (parentElement, typy) ->
     ig.Events @
@@ -33,6 +34,7 @@ window.ig.Infobar = class Infobar
     @dateFilters = []
     @typFilters  = []
     @initTimeHistogram!
+    @initCalendar!
 
   initTimeHistogram: ->
     @timeHistogram = [0 til 24].map -> value: 0
@@ -53,6 +55,45 @@ window.ig.Infobar = class Infobar
     @timeHistogramBarFills = @timeHistogramBars.append \div
       ..attr \class \fill
       ..attr \data-tooltip "Kliknutím vyberte hodinu"
+
+  initCalendar: ->
+    startDate = new Date!
+      ..setDate 1
+      ..setMonth 2
+      ..setFullYear 2014
+      ..setHours 12
+    months = for month in [0 til 12]
+      {monthId: month, days: [], name: monthNames[month]}
+
+    time = startDate.getTime!
+    lastMonth = null
+    index = 0
+    for i in [0 til 365]
+      time += 86400 * 1e3
+      day = startDate.getDay! - 1
+      if day == -1 then day = 6
+      month = startDate.getMonth!
+      if month != lastMonth
+        lastMonth = month
+        index = day
+      x = index % 7
+      y = Math.floor index / 7
+      months[month].days.push {day, time, index, x, y}
+      index++
+      startDate.setTime time
+    console.log months[0]
+    @element.append \div
+      ..attr \class "calendar"
+      ..selectAll \div.month .data months .enter!append \div
+        ..attr \class \month
+        ..append \span
+          ..attr \class \title
+          ..html (.name)
+        ..selectAll \div.day .data (.days) .enter!append \div
+          ..attr \class \day
+          ..style \left -> "#{it.x * 11}px"
+          ..style \top -> "#{it.y * 4}px"
+
 
   toggleTimeFilter: (startHour) ->
     index = @timeFilters.indexOf startHour
