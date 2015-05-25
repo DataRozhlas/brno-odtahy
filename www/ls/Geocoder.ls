@@ -11,7 +11,7 @@ window.ig.Geocoder = class Geocoder
 
     inputText = document.createElement \input
       ..type = \text
-      ..setAttribute? \placeholder "Vinohradská 12"
+      ..setAttribute? \placeholder "Gorkého 82"
     inputButton = document.createElement \input
       ..type = \submit
       ..value = "Najít"
