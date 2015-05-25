@@ -25,41 +25,17 @@ window.ig.Map = class Map
         ..domain [1 10 100 1000 10000 999999]
         ..range <[#fd8d3c #fc4e2a #e31a1c #bd0026 #800026 #800026]>
     @currentMarkers = []
-    switch ig.dir.substr 0, 5
-    | \praha
-      bounds =
-        x: [14.263 14.689]
-        y: [49.952 50.171]
-      center = [(bounds.y.0 + bounds.y.1) / 2, (bounds.x.0 + bounds.x.1) / 2]
-      center.0 += 0.023
-      center.1 -= 0.04
+    bounds =
+      x: [16.475 16.716]
+      y: [49.124 49.289]
+    zoom = 14
+    center = [(bounds.y.0 + bounds.y.1) / 2, (bounds.x.0 + bounds.x.1) / 2]
+    center.0 -= 0.01
+    center.1 += 0.01
+    if ig.isRychlost
       zoom = 13
-      if ig.isRychlost
-        zoom = 12
-        center = [50.06199 14.4070]
-      maxBounds = [[49.94,14.24], [50.18,14.7]]
-    | \tepli
-      bounds =
-        x: [13.792 13.862]
-        y: [50.622 50.665]
-      center = [(bounds.y.0 + bounds.y.1) / 2, (bounds.x.0 + bounds.x.1) / 2]
-      center.0 -= 0.005
-      center.1 -= 0.004
-      zoom = 15
-      maxBounds = [[50.61 13.78], [50.68, 13.95]]
-
-    | otherwise
-      bounds =
-        x: [16.475 16.716]
-        y: [49.124 49.289]
-      zoom = 14
-      center = [(bounds.y.0 + bounds.y.1) / 2, (bounds.x.0 + bounds.x.1) / 2]
-      center.0 -= 0.01
-      center.1 += 0.01
-      if ig.isRychlost
-        zoom = 13
-        center = [49.1849 16.6344]
-      maxBounds = [[49.11 16.46] [49.30 16.74]]
+      center = [49.1849 16.6344]
+    maxBounds = [[49.11 16.46] [49.30 16.74]]
 
     @map = L.map do
       * mapElement

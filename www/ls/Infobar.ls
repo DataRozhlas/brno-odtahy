@@ -33,7 +33,6 @@ window.ig.Infobar = class Infobar
 
     @timeFilters = []
     @dateFilters = []
-    @typFilters  = []
     @initTimeHistogram!
     @initCalendar!
 
@@ -84,13 +83,14 @@ window.ig.Infobar = class Infobar
       date = startDate.getDate!
       x = index % 7
       y = Math.floor index / 7
-      day = {day, date, month, time, index, x, y, value: 0}
+      id = "#{month}-#{date}"
+      day = {day, date, month, time, index, x, y, value: 0, id}
       months[month].days.push day
-      @calendarDays["#{month}-#{date}"] = day
+      @calendarDays[id] = day
       index++
       startDate.setTime time
 
-    calendarElement = @element.append \div
+    @calendarElement = @element.append \div
       ..attr \class "calendar"
       ..selectAll \div.month .data months .enter!append \div
         ..attr \class \month
@@ -103,8 +103,9 @@ window.ig.Infobar = class Infobar
               ..attr \class \day
               ..style \left -> "#{it.x * 11}px"
               ..style \top -> "#{it.y * 4}px"
+              ..on \click ~> @toggleDateFilter it.id
               ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}"
-    @calendarDayElements = calendarElement.selectAll \.day
+    @calendarDayElements = @calendarElement.selectAll \.day
 
 
   toggleTimeFilter: (startHour) ->
@@ -123,41 +124,26 @@ window.ig.Infobar = class Infobar
       @dateFilters.push day
     @updateFilteredView!
 
-  toggleTypFilter: (typ) ->
-    typId = typ.id
-    if typ.isFiltered
-      @typFilters.splice do
-        @typFilters.indexOf typId
-        1
-    else
-      @typFilters.push typId
-    typ.isFiltered = !typ.isFiltered
-    @updateFilteredView!
-
   clearFilters: ->
     @timeFilters.length = 0
     @dateFilters.length = 0
-    @typFilters.length = 0
 
   updateFilteredView: ->
     @refilter!
     @recomputeGraphs!
     @refilterTimeHistogram!
+    @refilterCalendar!
     @emit \updatedPoints @filteredData
 
   refilter: ->
     timeFiltersLen = @timeFilters.length
     dateFiltersLen = @dateFilters.length
-    typFiltersLen  = @typFilters.length
     @filteredData = @fullData.filter (datum) ~>
       if timeFiltersLen
         return false unless datum.hasHours
         return false if datum.date.getHours! not in @timeFilters
       if dateFiltersLen
-        return false unless datum.date
-        return false if datum.day not in @dateFilters
-      if typFiltersLen
-        return false if datum.typId not in @typFilters
+        return datum.dayId in @dateFilters
       return true
 
   draw: (bounds) ->
@@ -176,7 +162,7 @@ window.ig.Infobar = class Infobar
     for typ in @typy
       typ.fullValue = typ.value
     @redrawGraphs!
-    if @timeFilters.length || @dateFilters.length || @typFilters.length
+    if @timeFilters.length || @dateFilters.length
       @updateFilteredView!
     else
       @emit \updatedPoints @filteredData
@@ -195,7 +181,7 @@ window.ig.Infobar = class Infobar
         if line.hasHours
           h = line.date.getHours!
           @timeHistogram[h].value++
-        day = @calendarDays["#{line.date.getMonth!}-#{line.date.getDate!}"]
+        day = @calendarDays[line.dayId]
           ..value++
         @dayMaximum = day.value if day.value > @dayMaximum
 
@@ -213,12 +199,24 @@ window.ig.Infobar = class Infobar
   redrawCalendar: ->
     domain = ig.utils.divideToParts [0, @dayMaximum], 7
     @calendarColorScale.domain domain
-    @calendarDayElements.style \background-color ~> @calendarColorScale it.value
+    @calendarDayElements
+      ..style \background-color ~> @calendarColorScale it.value
+      ..attr \data-tooltip ->
+        plural = switch
+        | it.value == 1 => "odtah"
+        | 1 < it.value < 5 => "odtahy"
+        | otherwise => "odtahů"
+        "#{it.date}. #{monthNames2[it.month]}: #{it.value} #{plural}"
 
   refilterTimeHistogram: ->
     @timeHistogramBarFills
       ..style \height ~>
         "#{it.value / @timeHistogramMax * 100}%"
+
+  refilterCalendar: ->
+    @redrawCalendar!
+    @calendarElement.classed \filtered @dateFilters.length > 0
+    @calendarDayElements.classed \filtered ~> it.id in @dateFilters
 
   reset: ->
     for field in [@timeHistogram]
@@ -267,6 +265,7 @@ downloadFiles = (files, cb) ->
               line.date.setHours hour
               line.hasHours = yes
             line.day = line.date.getDay! - 1
+            line.dayId = "#{line.date.getMonth!}-#{line.date.getDate!}"
             if line.day == -1 then line.day = 6 # nedele na konec tydne
           line.x = parseFloat line.x
           line.y = parseFloat line.y
