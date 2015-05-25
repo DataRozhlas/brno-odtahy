@@ -1,11 +1,10 @@
 ig = window.ig
 init = ->
   tooltip = new Tooltip!watchElements!
-  [dir, location] = window.location.hash.substr 1 .split ':'
-  ig.dir = dir = "brno-odtahy"
-  ig.isRychlost = \rychlost == ig.dir.substr -8
+  [filter, location] = window.location.hash.substr 1 .split ':'
+  ig.dir = "brno-odtahy"
+  ig.isRychlost = false
   container = d3.select ig.containers.base
-  if ig.isRychlost then container.classed \rychlost yes
   points = d3.tsv.parse ig.data.odtahy, (row) ->
     row.x = parseFloat row.x
     row.y = parseFloat row.y
@@ -22,7 +21,9 @@ init = ->
       ..setMinutes i
     row.dayId = "#{row.date.getMonth!}-#{row.date.getDate!}"
     row
-
+  switch filter
+    | \cisteni => points .= filter -> it.cisteni
+    | \policie => points .= filter -> !it.cisteni
   map = new ig.Map ig.containers.base
     ..drawHeatmap points
 
