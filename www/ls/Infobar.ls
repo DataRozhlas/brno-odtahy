@@ -69,6 +69,10 @@ window.ig.Infobar = class Infobar
     time = startDate.getTime!
     lastMonth = null
     index = 0
+    @calendarColorScale = d3.scale.linear!
+      ..range <[#cccccc #cfb0a7 #ce9384 #c97863 #c25a43 #b83a23 #ab0000]>
+    @calendarDays  = {}
+    @dayMaximum = -Infinity
     for i in [0 til 365]
       time += 86400 * 1e3
       day = startDate.getDay! - 1
@@ -80,11 +84,13 @@ window.ig.Infobar = class Infobar
       date = startDate.getDate!
       x = index % 7
       y = Math.floor index / 7
-      months[month].days.push {day, date, month, time, index, x, y}
+      day = {day, date, month, time, index, x, y, value: 0}
+      months[month].days.push day
+      @calendarDays["#{month}-#{date}"] = day
       index++
       startDate.setTime time
-    console.log months[0]
-    @element.append \div
+
+    calendarElement = @element.append \div
       ..attr \class "calendar"
       ..selectAll \div.month .data months .enter!append \div
         ..attr \class \month
@@ -94,10 +100,11 @@ window.ig.Infobar = class Infobar
         ..append \div
           ..attr \class \month-content
             ..selectAll \div.day .data (.days) .enter!append \div
-              ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}"
               ..attr \class \day
               ..style \left -> "#{it.x * 11}px"
               ..style \top -> "#{it.y * 4}px"
+              ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}"
+    @calendarDayElements = calendarElement.selectAll \.day
 
 
   toggleTimeFilter: (startHour) ->
@@ -188,9 +195,13 @@ window.ig.Infobar = class Infobar
         if line.hasHours
           h = line.date.getHours!
           @timeHistogram[h].value++
+        day = @calendarDays["#{line.date.getMonth!}-#{line.date.getDate!}"]
+          ..value++
+        @dayMaximum = day.value if day.value > @dayMaximum
 
   redrawGraphs: ->
     @redrawTimeHistogram!
+    @redrawCalendar!
 
   redrawTimeHistogram: ->
     @timeHistogramMax = d3.max @timeHistogram.map (.value) or 1
@@ -198,6 +209,11 @@ window.ig.Infobar = class Infobar
       ..style \height ~>
         "#{it.value / @timeHistogramMax * 100}%"
     @refilterTimeHistogram!
+
+  redrawCalendar: ->
+    domain = ig.utils.divideToParts [0, @dayMaximum], 7
+    @calendarColorScale.domain domain
+    @calendarDayElements.style \background-color ~> @calendarColorScale it.value
 
   refilterTimeHistogram: ->
     @timeHistogramBarFills
@@ -208,6 +224,9 @@ window.ig.Infobar = class Infobar
     for field in [@timeHistogram]
       for item in field
         item.value = 0
+    for index, day of @calendarDays
+      day.value = 0
+    @dayMaximum = -Infinity
 
 currBounds = null
 downloadBounds = (bounds, cb) ->
