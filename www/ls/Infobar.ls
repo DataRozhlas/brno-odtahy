@@ -154,6 +154,9 @@ window.ig.Infobar = class Infobar
       return true
 
   draw: (bounds) ->
+    str = JSON.stringify bounds
+    return if str is @lastBoundsString
+    @lastBoundsString = str
     @element.classed \nodata no
     (err, data) <~ downloadBounds bounds
     @drawWithData data
