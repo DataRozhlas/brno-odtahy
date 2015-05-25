@@ -26,7 +26,7 @@ init = ->
       0
     mapTimeout := setTimeout do
       ->
-        map.drawFilteredHeatmap heatmapLastPointList
+        map.drawFilteredPoints heatmapLastPointList
         lastHeatCall := Date.now!
         mapTimeout := null
       nextCall

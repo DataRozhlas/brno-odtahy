@@ -183,7 +183,7 @@ window.ig.Map = class Map
       ..addTo @map
     @onMapChange!
 
-  drawFilteredHeatmap: (pointList) ->
+  drawFilteredPoints: (pointList) ->
     return if @markerDrawn
     if pointList.length
       @desaturateHeatmap!
