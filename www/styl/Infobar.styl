@@ -7,6 +7,7 @@
   background lighten(ColorGreyBg, 80%)
   border-left 1px solid lighten(ColorGreyBg, 30%)
   padding 20px 10px
+  overflow hidden
   h2
     color ColorHeading
     font-size 20px
@@ -104,29 +105,40 @@
       .bar.inactive .fill
         background #ccc
   .calendar
-    margin-top 68px
+    margin-top 48px
     float left
-    width 100%
-    padding-left 14px
+    width 330px
+    margin-left -10px
+    padding-top 17px
     .month
       float left
-      width 76px
-      height 60px
+      width 110px
+      height 70px
       position relative
-      &:nth-child(3n+2)
-        margin 0px 25px
       .title
         position absolute
         display block
-        width 76px
+        width 100%
         top -20px
         font-size 10px
         text-align center
         text-transform uppercase
-      .day
-        position absolute
-        background #c
-        width 10px
-        height 3px
+      .month-content
+        width 76px
+        height 24px
+        position relative
+        left 17px
+        top 10px
+        transition transform 0.2s
+        .day
+          position absolute
+          background #c
+          width 10px
+          height 3px
+          cursor pointer
+      &:hover
+        .month-content
+          transform scale(1.5, 2)
+
 
 

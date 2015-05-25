@@ -1,4 +1,5 @@
 monthNames= <[Leden Únor Březen Duben Květen Červen Červenec Srpen Září Říjen Listopad Prosinec]>
+monthNames2 = <[ledna února března dubna května června července srpna září října listopadu prosince]>
 window.ig.Infobar = class Infobar
   (parentElement, typy) ->
     ig.Events @
@@ -76,9 +77,10 @@ window.ig.Infobar = class Infobar
       if month != lastMonth
         lastMonth = month
         index = day
+      date = startDate.getDate!
       x = index % 7
       y = Math.floor index / 7
-      months[month].days.push {day, time, index, x, y}
+      months[month].days.push {day, date, month, time, index, x, y}
       index++
       startDate.setTime time
     console.log months[0]
@@ -89,10 +91,13 @@ window.ig.Infobar = class Infobar
         ..append \span
           ..attr \class \title
           ..html (.name)
-        ..selectAll \div.day .data (.days) .enter!append \div
-          ..attr \class \day
-          ..style \left -> "#{it.x * 11}px"
-          ..style \top -> "#{it.y * 4}px"
+        ..append \div
+          ..attr \class \month-content
+            ..selectAll \div.day .data (.days) .enter!append \div
+              ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}"
+              ..attr \class \day
+              ..style \left -> "#{it.x * 11}px"
+              ..style \top -> "#{it.y * 4}px"
 
 
   toggleTimeFilter: (startHour) ->
