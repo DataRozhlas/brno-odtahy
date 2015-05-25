@@ -4,7 +4,7 @@ window.ig.Map = class Map
     @tooltip = new Tooltip!
     mapElement = document.createElement 'div'
       ..id = \map
-    @markerDrawn = yes
+    @singlePointDrawn = no
     window.ig.Events @
     parentElement.appendChild mapElement
     @groupedLatLngs = []
@@ -146,10 +146,6 @@ window.ig.Map = class Map
         ..on \click ~>
           @emit \markerClicked marker
           @addMicroRectangle latLng
-      if latLng.address
-        marker
-          ..on \mouseover ~> @tooltip.display latLng.address
-          ..on \mouseout ~> @tooltip.hide!
 
       @currentMarkers.push marker
       @markerLayer.addLayer marker
@@ -160,31 +156,27 @@ window.ig.Map = class Map
     @map.addLayer @heatFilteredLayer if @heatFilteredLayer
     @map.removeLayer @markerLayer
 
-  drawHeatmap: (dir) ->
-    (err, data) <~ d3.tsv "../data/processed/#dir/grouped.tsv", (line) ->
-      line.x = parseFloat line.x
-      line.y = parseFloat line.y
-      # line.typ = parseInt line.typ, 10
-      line.count = parseInt line.count, 10
-      line
-    # data .= filter -> -1 != window.ig.typy[it.typ].indexOf "rychlost"
-    latLngs = for item in data
-      latlng = L.latLng item.y, item.x
-        ..alt = item.count
-        ..address = item.address
-      latlng
-    @groupedLatLngs = latLngs
-
+  drawHeatmap: (points) ->
+    latLngsAssoc = {}
+    @groupedLatLngs = []
+    for point in points
+      id = "#{point.x}-#{point.y}"
+      if latLngsAssoc[id]
+        that.alt++
+      else
+        latLngsAssoc[id] = L.latLng point.y, point.x
+        @groupedLatLngs.push latLngsAssoc[id]
+        latLngsAssoc[id].alt = 1
     options =
       radius: 8
-    @heatLayer = L.heatLayer latLngs, options
+    @heatLayer = L.heatLayer @groupedLatLngs, options
       ..addTo @map
     @heatFilteredLayer = L.heatLayer [], options
       ..addTo @map
     @onMapChange!
 
   drawFilteredPoints: (pointList) ->
-    return if @markerDrawn
+    return if @singlePointDrawn
     if pointList.length
       @desaturateHeatmap!
       options =
@@ -201,10 +193,10 @@ window.ig.Map = class Map
     return if @heatmapIsDesaturated
     @heatmapIsDesaturated = yes
     gradient =
-      0.4: '#d9d9d9'
-      0.7: '#bdbdbd'
-      0.9: '#737373'
-      1.0: '#525252'
+      0.4: '#e6e6e6'
+      0.7: '#e6e6e6'
+      0.9: '#d9d9d9'
+      1.0: '#bdbdbd'
     @heatLayer.setOptions {gradient}
 
   resaturateHeatmap: ->
@@ -248,7 +240,7 @@ window.ig.Map = class Map
       ..off \mouseup
 
   setSelection: (bounds) ->
-    @markerDrawn = no
+    @singlePointDrawn = no
     @emit \selection bounds
 
   addMiniRectangle: (latlng) ->
@@ -264,7 +256,7 @@ window.ig.Map = class Map
     @setSelection [startLatlng, endLatlng]
 
   addMicroRectangle: (latlng) ->
-    @markerDrawn = yes
+    @singlePointDrawn = yes
     @cancelSelection!
     startLatlng =
       latlng.lat

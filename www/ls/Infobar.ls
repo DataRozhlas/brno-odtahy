@@ -1,10 +1,8 @@
 monthNames= <[Leden Únor Březen Duben Květen Červen Červenec Srpen Září Říjen Listopad Prosinec]>
 monthNames2 = <[ledna února března dubna května června července srpna září října listopadu prosince]>
 window.ig.Infobar = class Infobar
-  (parentElement, typy) ->
+  (parentElement, @fullData) ->
     ig.Events @
-    @typy = typy.map -> {name: it.text, id: it.id, value: 0}
-    @typyAssoc = @typy.slice!
     @element = parentElement.append \div
       ..attr \class "infobar nodata"
     @heading = @element.append \h2
@@ -29,7 +27,7 @@ window.ig.Infobar = class Infobar
       ..html "0"
     @prestupkuVybranoElm = totalElm.append \span
       ..attr \class \suffix
-      ..html " přestupků vybráno"
+      ..html " přestupků celkem"
 
     @timeFilters = []
     @dateFilters = []
@@ -59,7 +57,7 @@ window.ig.Infobar = class Infobar
   initCalendar: ->
     startDate = new Date!
       ..setDate 1
-      ..setMonth 2
+      ..setMonth 0
       ..setFullYear 2014
       ..setHours 12
     months = for month in [0 til 12]
@@ -138,9 +136,8 @@ window.ig.Infobar = class Infobar
   refilter: ->
     timeFiltersLen = @timeFilters.length
     dateFiltersLen = @dateFilters.length
-    @filteredData = @fullData.filter (datum) ~>
+    @filteredData = @unfilteredData.filter (datum) ~>
       if timeFiltersLen
-        return false unless datum.hasHours
         return false if datum.date.getHours! not in @timeFilters
       if dateFiltersLen
         return datum.dayId in @dateFilters
@@ -151,16 +148,14 @@ window.ig.Infobar = class Infobar
     return if str is @lastBoundsString
     @lastBoundsString = str
     @element.classed \nodata no
-    (err, data) <~ downloadBounds bounds
+    bounds = L.latLngBounds bounds
+    data = @fullData.filter -> bounds.contains it.latLng
     @drawWithData data
 
-  drawWithData: (data) ->
-    @filteredData = @fullData = data
-    if @fullData.length == 0
-      @element.classed \nodata yes
+  drawWithData: (data = @fullData) ->
+    @filteredData = @unfilteredData = data
+    @element.classed \nodata @unfilteredData.length == 0
     @recomputeGraphs!
-    for typ in @typy
-      typ.fullValue = typ.value
     @redrawGraphs!
     if @timeFilters.length || @dateFilters.length
       @updateFilteredView!
@@ -174,16 +169,14 @@ window.ig.Infobar = class Infobar
     @prestupkuVybranoElm.html switch
     | 5 > total > 1 => " přestupky vybrány"
     | total == 1 => " přestupek vybrán"
+    | total == 15081 => "přestupků celkem"
     | otherwise => " přestupků vybráno"
     @reset!
     for line in @filteredData
-      if line.date
-        if line.hasHours
-          h = line.date.getHours!
-          @timeHistogram[h].value++
-        day = @calendarDays[line.dayId]
-          ..value++
-        @dayMaximum = day.value if day.value > @dayMaximum
+      @timeHistogram[line.date.getHours!].value++
+      day = @calendarDays[line.dayId]
+        ..value++
+      @dayMaximum = day.value if day.value > @dayMaximum
 
   redrawGraphs: ->
     @redrawTimeHistogram!
@@ -225,66 +218,3 @@ window.ig.Infobar = class Infobar
     for index, day of @calendarDays
       day.value = 0
     @dayMaximum = -Infinity
-
-currBounds = null
-downloadBounds = (bounds, cb) ->
-  xBounds = [bounds.0.1, bounds.1.1]
-  yBounds = [bounds.0.0, bounds.1.0]
-  [xBounds, yBounds].forEach -> it.sort (a, b) -> a - b
-  files = getRequiredFiles xBounds, yBounds
-  currBounds := [xBounds, yBounds]
-  (err, lines) <~ downloadFiles files
-  return if lines is null
-  inboundLines = lines.filter ({x, y}) ->
-    currBounds.0.0 <= x <= currBounds.0.1 and currBounds.1.0 <= y <= currBounds.1.1
-  cb err, inboundLines
-
-cache = {}
-downloadFiles = (files, cb) ->
-  id = files.join '+'
-  if cache[id] isnt void
-    cb null, cache[id]
-  else
-    cache[id] = null
-    (err, data) <- async.map files, (file, cb) ->
-      (err, data) <~ d3.tsv do
-        "../data/processed/#{ig.dir}/tiles/#file"
-        (line) ->
-          if line.spachano
-            [year, month, day, hour] =
-              parseInt (line.spachano.substr 0, 2), 10
-              parseInt (line.spachano.substr 2, 2), 10
-              parseInt (line.spachano.substr 4, 2), 10
-              parseInt (line.spachano.substr 6, 2), 10
-            line.date = new Date!
-              ..setTime 0
-              ..setFullYear year
-              ..setMonth month - 1
-              ..setDate day
-            if !isNaN hour
-              line.date.setHours hour
-              line.hasHours = yes
-            line.day = line.date.getDay! - 1
-            line.dayId = "#{line.date.getMonth!}-#{line.date.getDate!}"
-            if line.day == -1 then line.day = 6 # nedele na konec tydne
-          line.x = parseFloat line.x
-          line.y = parseFloat line.y
-          line.typId = parseInt line.typ, 10
-          # TODO: typ, spachano date
-          line
-      cb null, data || []
-    all = [].concat ...data
-    cache[id] = all
-    cb null, all
-
-getRequiredFiles = (x, y) ->
-  xIndices = x.map getXIndex
-  yIndices = y.map getYIndex
-  files = []
-  for xIndex in [xIndices.0 to xIndices.1]
-    for yIndex in [yIndices.0 to yIndices.1]
-      files.push "#{xIndex}-#{yIndex}.tsv"
-  files
-
-getXIndex = -> Math.floor it / 0.01
-getYIndex = -> Math.floor it / 0.005

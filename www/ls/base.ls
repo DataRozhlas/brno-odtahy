@@ -6,12 +6,27 @@ init = ->
   ig.isRychlost = \rychlost == ig.dir.substr -8
   container = d3.select ig.containers.base
   if ig.isRychlost then container.classed \rychlost yes
+  points = d3.tsv.parse ig.data.odtahy, (row) ->
+    row.x = parseFloat row.x
+    row.y = parseFloat row.y
+    row.latLng = L.latLng row.y, row.x
+    row.cisteni = row.cisteni == "1"
+    [d, m, y] = row.datum.split "." .map parseInt _, 10
+    [h, i] = row.cas.split ":" .map parseInt _, 10
+    row.date = new Date!
+      ..setTime 0
+      ..setDate d
+      ..setMonth m - 1
+      ..setYear 2000 + y
+      ..setHours h
+      ..setMinutes i
+    row.dayId = "#{row.date.getMonth!}-#{row.date.getDate!}"
+    row
+
   map = new ig.Map ig.containers.base
-    ..drawHeatmap dir
-  (err, data) <~ d3.text "../data/processed/#dir/typy.tsv"
-  ig.typy = typy = for text, id in data.split "\n"
-    {text, id}
-  infobar = new ig.Infobar container, typy
+    ..drawHeatmap points
+
+  infobar = new ig.Infobar container, points
   map
     ..on \selection infobar~draw
     ..on \markerClicked infobar~clearFilters
@@ -34,6 +49,7 @@ init = ->
   infobar
     ..on \updatedPoints throttleHeatmap
     ..on \selectionCancelled map~cancelSelection
+    ..drawWithData!
   geocoder = new ig.Geocoder ig.containers.base
     ..on \latLng (latlng) ->
       map.map.setView latlng, 18
