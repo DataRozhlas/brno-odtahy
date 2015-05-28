@@ -16,7 +16,7 @@ window.ig.Infobar = class Infobar
       ..on \click ~>
         @emit \selectionCancelled
         @clearFilters!
-        @drawWithData []
+        @drawWithData @fullData
     @element.append \span
       ..attr \class \subtitle
       ..html "Kliknutím vyberte část města, která vás zajímá. Velikost výběru můžete změnit tlačítkem ◰ vlevo&nbsp;nahoře."
@@ -158,7 +158,7 @@ window.ig.Infobar = class Infobar
 
   drawWithData: (data = @fullData) ->
     @filteredData = @unfilteredData = data
-    @element.classed \nodata @unfilteredData.length == 0
+    @element.classed \nodata @unfilteredData.length == 0 || @unfilteredData.length == @fullData.length
     @recomputeGraphs!
     @redrawGraphs!
     if @timeFilters.length || @dateFilters.length

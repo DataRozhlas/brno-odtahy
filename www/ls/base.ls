@@ -2,6 +2,7 @@ ig = window.ig
 init = ->
   tooltip = new Tooltip!watchElements!
   [filter, location] = window.location.hash.substr 1 .split ':'
+  ig.filter = filter
   ig.dir = "brno-odtahy"
   ig.isRychlost = false
   container = d3.select ig.containers.base
@@ -58,7 +59,7 @@ init = ->
   shareDialog = new ig.ShareDialog ig.containers.base
     ..on \hashRequested ->
       center = map.map.getCenter!
-      shareDialog.setHash "#{ig.dir}:#{center.lat.toFixed 4},#{center.lng.toFixed 4},#{map.map.getZoom!}"
+      shareDialog.setHash "#{ig.filter}:#{center.lat.toFixed 4},#{center.lng.toFixed 4},#{map.map.getZoom!}"
   new ig.EmbedLogo ig.containers.base, dark: yes
   handleHashLocation = (hashLocation) ->
     [lat, lon, zoom] = hashLocation.split /[^-\.0-9]+/
