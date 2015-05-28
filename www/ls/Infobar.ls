@@ -89,20 +89,24 @@ window.ig.Infobar = class Infobar
       startDate.setTime time
 
     @calendarElement = @element.append \div
-      ..attr \class "calendar"
-      ..selectAll \div.month .data months .enter!append \div
-        ..attr \class \month
-        ..append \span
-          ..attr \class \title
-          ..html (.name)
-        ..append \div
-          ..attr \class \month-content
-            ..selectAll \div.day .data (.days) .enter!append \div
-              ..attr \class \day
-              ..style \left -> "#{it.x * 11}px"
-              ..style \top -> "#{it.y * 4}px"
-              ..on \click ~> @toggleDateFilter it.id
-              ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}"
+      ..attr \class "calendar-container"
+      ..append \h3
+        ..html "V jaké dny se odtahuje"
+      ..append \div
+        ..attr \class "calendar"
+        ..selectAll \div.month .data months .enter!append \div
+          ..attr \class \month
+          ..append \span
+            ..attr \class \title
+            ..html (.name)
+          ..append \div
+            ..attr \class \month-content
+              ..selectAll \div.day .data (.days) .enter!append \div
+                ..attr \class \day
+                ..style \left -> "#{it.x * 11}px"
+                ..style \top -> "#{it.y * 4}px"
+                ..on \click ~> @toggleDateFilter it.id
+                ..attr \data-tooltip -> "#{it.date}. #{monthNames2[it.month]}<br><small>Kliknutím vyberete pouze tento den</small>"
     @calendarDayElements = @calendarElement.selectAll \.day
 
 
@@ -199,7 +203,7 @@ window.ig.Infobar = class Infobar
         | it.value == 1 => "odtah"
         | 1 < it.value < 5 => "odtahy"
         | otherwise => "odtahů"
-        "#{it.date}. #{monthNames2[it.month]}: #{it.value} #{plural}"
+        "#{it.date}. #{monthNames2[it.month]}: #{it.value} #{plural}<br><small><em>Kliknutím vyberete pouze tento den</em></small>"
 
   refilterTimeHistogram: ->
     @timeHistogramBarFills
